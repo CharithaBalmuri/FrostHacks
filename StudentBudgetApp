@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Budget App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-size: 18px;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            cursor: pointer;
+            background-color: #4caf50;
+            color: #fff;
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        h2,
+        h3,
+        h4 {
+            font-size: 24px;
+        }
+
+        .output {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="initialPage">
+            <h2>Student Budget App</h2>
+            <p>Suggestion: Track your expenses to manage your budget effectively.</p>
+            <form id="initialForm">
+                <label for="initialBalance">Enter Initial Balance ($):</label>
+                <input type="number" id="initialBalance" step="0.01" required>
+                <button type="button" onclick="proceedToActionPage()">Proceed</button>
+                <button type="button" onclick="exitApp('initialPage')">Exit</button>
+            </form>
+        </div>
+
+        <div id="actionPage" style="display: none;">
+            <h2>Student Budget App</h2>
+            <p>Suggestion: Categorize your expenses for better tracking.</p>
+            <p>Choose an action:</p>
+            <button type="button" onclick="showIncomeForm()">Add Income</button>
+            <button type="button" onclick="showExpenseForm()">Add Expense</button>
+            <button type="button" onclick="showStatus()">Show Status</button>
+            <button type="button" onclick="showExpenseOCRPage()">Expense Tracking with OCR</button>
+            <button type="button" onclick="exitApp('actionPage')">Exit</button>
+        </div>
+
+        <div id="incomePage" style="display: none;">
+            <h2>Student Budget App</h2>
+            <p>Suggestion: Set a monthly income goal to achieve your financial targets.</p>
+            <form id="incomeForm">
+                <label for="income">Income Amount ($):</label>
+                <input type="number" id="income" step="0.01" required>
+                <label for="incomeSource">Income Source:</label>
+                <input type="text" id="incomeSource" required>
+                <button type="button" onclick="addIncome()">Add Income</button>
+                <button type="button" onclick="returnToActionPage()">Return to Actions</button>
+                <button type="button" onclick="exitApp('incomePage')">Exit</button>
+            </form>
+        </div>
+
+        <div id="expensePage" style="display: none;">
+            <h2>Student Budget App</h2>
+            <p>Suggestion: Monitor your high-expense categories to save more.</p>
+            <form id="expenseForm">
+                <label for="category">Expense Category:</label>
+                <input type="text" id="category" required>
+                <label for="amount">Expense Amount ($):</label>
+                <input type="number" id="amount" step="0.01" required>
+                <button type="button" onclick="addExpense()">Add Expense</button>
+                <button type="button" onclick="returnToActionPage()">Return to Actions</button>
+                <button type="button" onclick="exitApp('expensePage')">Exit</button>
+            </form>
+        </div>
+
+        <div id="expenseOCRPage" style="display: none;">
+            <h2>Student Budget App</h2>
+            <p>Suggestion: Capture receipts using your phone's camera for automatic expense tracking.</p>
+            <input type="file" accept="image/*" capture="camera" id="receiptInput" style="display: none;">
+            <button type="button" onclick="captureReceipt()">Capture Receipt</button>
+            <button type="button" onclick="returnToActionPage()">Return to Actions</button>
+            <button type="button" onclick="exitApp('expenseOCRPage')">Exit</button>
+        </div>
+
+        <div class="Account Status" id="statusOutput" style="display: none;">
+            <h3>Account Status:</h3>
+            <p id="balance">Current Balance: $0</p>
+            <h4>Income List:</h4>
+            <p id="incomeList"></p>
+            <h4>Expenses List:</h4>
+            <p id="expenses"></p>
+            <button type="button" onclick="backToHome()">Back to Home</button>
+            <button type="button" onclick="exitApp('statusOutput')">Exit</button>
+        </div>
+    </div>
+
+    <script>
+        class StudentBudgetApp {
+            constructor() {
+                this.balance = 0;
+                this.income = 0;
+                this.expenses = {};
+                this.incomeList = [];
+            }
+
+            addIncome(income, source) {
+                this.income += income;
+                this.balance += income;
+                this.incomeList.push({ source, amount: income });
+            }
+
+            addExpense(category, amount) {
+                if (!(category in this.expenses)) {
+                    this.expenses[category] = 0;
+                }
+                this.expenses[category] += amount;
+                this.balance -= amount;
+            }
+
+            displayBalance() {
+                return `Current Balance: $${this.balance.toFixed(2)}`;
+            }
+
+            displayIncomeList() {
+                return this.incomeList.map(item => `${item.source}: $${item.amount.toFixed(2)}`).join("<br>");
+            }
+
+            displayExpenses() {
+                let output = "";
+                for (const [category, amount] of Object.entries(this.expenses)) {
+                    output += `${category}: $${amount.toFixed(2)}<br>`;
+                }
+                return output;
+            }
+
+            updateStatusOutput() {
+                document.getElementById("balance").innerHTML = this.displayBalance();
+                document.getElementById("incomeList").innerHTML = this.displayIncomeList();
+                document.getElementById("expenses").innerHTML = this.displayExpenses();
+            }
+        }
+
+        const budgetApp = new StudentBudgetApp();
+
+        function proceedToActionPage() {
+            const initialBalance = parseFloat(document.getElementById("initialBalance").value);
+
+            if (isNaN(initialBalance) || initialBalance < 0) {
+                alert("Please enter a valid initial balance.");
+                return;
+            }
+
+            budgetApp.balance = initialBalance;
+            document.getElementById("initialPage").style.display = "none";
+            document.getElementById("actionPage").style.display = "block";
+        }
+
+        function showIncomeForm() {
+            document.getElementById("actionPage").style.display = "none";
+            document.getElementById("incomePage").style.display = "block";
+        }
+
+        function showExpenseForm() {
+            document.getElementById("actionPage").style.display = "none";
+            document.getElementById("expensePage").style.display = "block";
+        }
+
+        function showExpenseOCRPage() {
+            document.getElementById("actionPage").style.display = "none";
+            document.getElementById("expenseOCRPage").style.display = "block";
+        }
+
+        function addIncome() {
+            const income = parseFloat(document.getElementById("income").value);
+            const incomeSource = document.getElementById("incomeSource").value;
+
+            if (isNaN(income) || income < 0 || !incomeSource) {
+                alert("Please enter valid income amount and source.");
+                return;
+            }
+
+            budgetApp.addIncome(income, incomeSource);
+            budgetApp.updateStatusOutput();
+            alert("Income added successfully!");
+            returnToActionPage();
+        }
+
+        function addExpense() {
+            const category = document.getElementById("category").value;
+            const amount = parseFloat(document.getElementById("amount").value);
+
+            if (isNaN(amount) || amount <= 0) {
+                alert("Please enter a valid positive amount.");
+                return;
+            }
+
+            budgetApp.addExpense(category, amount);
+            budgetApp.updateStatusOutput();
+            alert("Expense added successfully!");
+            returnToActionPage();
+        }
+
+        function captureReceipt() {
+            const receiptInput = document.getElementById("receiptInput");
+            receiptInput.click();
+        }
+
+        function handleReceiptUpload() {
+            const receiptInput = document.getElementById("receiptInput");
+            const file = receiptInput.files[0];
+
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onloadend = function () {
+                // Simulated OCR processing
+                const simulatedOCR = () => {
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            const fakeReceiptData = {
+                                amount: 25.99,
+                                date: '2024-01-28',
+                                vendor: 'Example Store'
+                            };
+                            resolve(fakeReceiptData);
+                        }, 2000); // Simulating OCR processing time
+                    });
+                };
+
+                simulatedOCR().then((receiptData) => {
+                    const { amount, date, vendor } = receiptData;
+                    addExpenseWithOCR(amount, date, vendor);
+                    alert(`Receipt captured successfully!\nAmount: $${amount}\nDate: ${date}\nVendor: ${vendor}`);
+                    returnToActionPage();
+                }).catch((error) => {
+                    console.error('OCR failed:', error);
+                    alert('Failed to capture receipt. Please try again.');
+                });
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function addExpenseWithOCR(amount, date, vendor) {
+            const category = 'OCR Expense';
+            addExpense(category, amount);
+        }
+
+        function returnToActionPage() {
+            document.getElementById("incomePage").style.display = "none";
+            document.getElementById("expensePage").style.display = "none";
+            document.getElementById("expenseOCRPage").style.display = "none";
+            document.getElementById("actionPage").style.display = "block";
+
+            // Reset input values
+            document.getElementById("income").value = "";
+            document.getElementById("incomeSource").value = "";
+            document.getElementById("category").value = "";
+            document.getElementById("amount").value = "";
+        }
+
+        function showStatus() {
+            budgetApp.updateStatusOutput();
+            document.getElementById("actionPage").style.display = "none";
+            document.getElementById("statusOutput").style.display = "block";
+
+            // Reset input values
+            document.getElementById("income").value = "";
+            document.getElementById("incomeSource").value = "";
+            document.getElementById("category").value = "";
+            document.getElementById("amount").value = "";
+        }
+
+        function backToHome() {
+            document.getElementById("statusOutput").style.display = "none";
+            document.getElementById("actionPage").style.display = "block";
+        }
+
+        function exitApp(pageId) {
+            const exitMessage = "<p>Thank you for using the Student Budget App!</p>";
+            const exitElement = document.getElementById(pageId);
+            exitElement.innerHTML = exitMessage;
+
+            setTimeout(() => {
+                window.location.href = "about:blank";
+            }, 5000);
+        }
+    </script>
+</body>
+
+</html>
